@@ -1,4 +1,4 @@
-import { getWebsites, addWebsite, toggleWebsite, deleteWebsite, removeCode, logout } from './actions';
+import { getWebsites, addWebsite, toggleWebsite, deleteWebsite, updateContent, logout } from './actions';
 
 export default async function Dashboard() {
   const websites = await getWebsites();
@@ -15,9 +15,19 @@ export default async function Dashboard() {
           </form>
         </div>
 
+        {/* Installation Instructions */}
+        <div className="mb-8 rounded-lg bg-blue-50 p-6 shadow-sm border border-blue-200">
+          <h2 className="mb-2 text-xl font-semibold text-blue-900">Installation Snippet</h2>
+          <p className="mb-4 text-sm text-blue-800">Paste this script in the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> of the target website. The system will automatically detect the domain.</p>
+          <code className="block w-full rounded bg-blue-100 p-3 text-sm text-blue-900 overflow-x-auto">
+            &lt;script src="https://web-control.easypanel.host/api/serve"&gt;&lt;/script&gt;
+          </code>
+        </div>
+
         {/* Add Website Form */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-          <h2 className="mb-4 text-xl font-semibold">Add New Website</h2>
+          <h2 className="mb-4 text-xl font-semibold">Add New Website (Optional)</h2>
+          <p className="text-sm text-gray-500 mb-4">Domains are added automatically when they load the script, but you can also pre-add them here.</p>
           <form action={addWebsite} className="flex gap-4 items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
@@ -26,15 +36,6 @@ export default async function Dashboard() {
                 type="text" 
                 placeholder="e.g., viterank.com" 
                 required
-                className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">File Path (Local path for code removal)</label>
-              <input 
-                name="filePath" 
-                type="text" 
-                placeholder="e.g., C:\websites\index.html" 
                 className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -51,7 +52,7 @@ export default async function Dashboard() {
               <tr>
                 <th className="px-6 py-4 font-semibold">Domain</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">File Path</th>
+                <th className="px-6 py-4 font-semibold">Content to Inject</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
@@ -72,29 +73,39 @@ export default async function Dashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs">
-                      {site.filePath || 'Not provided'}
+                      <form action={async (formData) => {
+                        'use server';
+                        await updateContent(site.domain, formData.get('content'));
+                      }} className="flex flex-col gap-2">
+                        <textarea 
+                          name="content"
+                          defaultValue={site.content || ''}
+                          placeholder="HTML/Text to inject into the website"
+                          className="w-full h-20 rounded border border-gray-300 p-2 font-mono text-xs focus:border-blue-500 focus:outline-none"
+                        ></textarea>
+                        <button type="submit" className="self-end rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-700">Save Content</button>
+                      </form>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-4 text-right align-top">
+                      <div className="flex flex-col justify-end gap-2 items-end">
                         <form action={async () => {
                           'use server';
                           await toggleWebsite(site.domain, site.status === 'paid' ? 'unpaid' : 'paid');
                         }}>
-                          <button type="submit" className="rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">
+                          <button type="submit" className="w-24 rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">
                             Mark {site.status === 'paid' ? 'Unpaid' : 'Paid'}
                           </button>
                         </form>
                         
                         <form action={async () => {
                           'use server';
-                          await removeCode(site.domain);
+                          await deleteWebsite(site.domain);
                         }}>
                           <button 
                             type="submit" 
-                            title="Deletes the tracking code entirely from the target file"
-                            className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+                            className="w-24 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
                           >
-                            Delete Code
+                            Delete Website
                           </button>
                         </form>
                       </div>

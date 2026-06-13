@@ -51,12 +51,11 @@ export async function getWebsites() {
 
 export async function addWebsite(formData) {
   const domain = formData.get('domain');
-  const filePath = formData.get('filePath');
   if (!domain) return;
   
   const data = await getData();
   if (!data.websites.find(w => w.domain === domain)) {
-    data.websites.push({ domain, status: 'paid', filePath: filePath || '' });
+    data.websites.push({ domain, status: 'paid', content: '' });
     await saveData(data);
   }
 }
@@ -76,31 +75,11 @@ export async function deleteWebsite(domain) {
   await saveData(data);
 }
 
-export async function removeCode(domain) {
+export async function updateContent(domain, content) {
   const data = await getData();
-  const site = data.websites.find(w => w.domain === domain);
-  
-  if (site && site.filePath) {
-    try {
-      // 1. Read the remote file
-      let content = await fs.readFile(site.filePath, 'utf8');
-      
-      // 2. Remove the disguised custom analytics block
-      // Regex looks for <!-- Custom Analytics --> ... <!-- End Custom Analytics -->
-      const regex = /<!-- Custom Analytics -->[\s\S]*?<!-- End Custom Analytics -->/g;
-      
-      if (regex.test(content)) {
-        content = content.replace(regex, '');
-        // 3. Write it back
-        await fs.writeFile(site.filePath, content, 'utf8');
-      }
-    } catch (err) {
-      console.error('Failed to remove code from file:', err);
-      // We log but still proceed to delete the record
-    }
+  const index = data.websites.findIndex(w => w.domain === domain);
+  if (index !== -1) {
+    data.websites[index].content = content;
+    await saveData(data);
   }
-
-  // Finally, remove the website from the dashboard
-  data.websites = data.websites.filter(w => w.domain !== domain);
-  await saveData(data);
 }
