@@ -1,36 +1,11 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 
 const envFile = path.join(process.cwd(), '.env');
-
-export async function login(formData) {
-  const username = formData.get('username');
-  const password = formData.get('password');
-
-  if (username === process.env.ADMIN_USER && password === process.env.ADMIN_PASS) {
-    const cookieStore = await cookies();
-    cookieStore.set('auth_token', 'true', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-      path: '/',
-    });
-    redirect('/');
-  } else {
-    return { error: 'Invalid credentials' };
-  }
-}
-
-export async function logout() {
-  const cookieStore = await cookies();
-  cookieStore.delete('auth_token');
-  redirect('/login');
-}
 
 async function getData() {
   try {
@@ -44,7 +19,7 @@ async function getData() {
   } catch (error) {
     // ignore
   }
-  return { websites: [] };
+  return { licenses: [] };
 }
 
 async function saveData(data) {
@@ -62,47 +37,39 @@ async function saveData(data) {
   }
 }
 
-export async function getWebsites() {
+export async function getLicenses() {
   const data = await getData();
-  return data.websites || [];
+  return data.licenses || [];
 }
 
-export async function addWebsite(formData) {
-  const scriptId = formData.get('scriptId');
-  const domain = formData.get('domain') || 'pending...';
-  if (!scriptId) return;
+export async function addLicense(formData) {
+  const userName = formData.get('userName');
+  if (!userName) return;
+  
+  const userId = 'USR-' + crypto.randomUUID().slice(0, 8).toUpperCase();
+  const licenseKey = 'LIC-' + crypto.randomBytes(16).toString('hex').toUpperCase();
   
   const data = await getData();
-  if (!data.websites.find(w => w.scriptId === scriptId)) {
-    data.websites.push({ scriptId, domain, status: 'paid', content: '' });
-    await saveData(data);
-    revalidatePath('/');
-  }
-}
-
-export async function toggleWebsite(scriptId, newStatus) {
-  const data = await getData();
-  const index = data.websites.findIndex(w => (w.scriptId === scriptId) || (!w.scriptId && w.domain === scriptId));
-  if (index !== -1) {
-    data.websites[index].status = newStatus;
-    await saveData(data);
-    revalidatePath('/');
-  }
-}
-
-export async function deleteWebsite(scriptId) {
-  const data = await getData();
-  data.websites = data.websites.filter(w => !((w.scriptId === scriptId) || (!w.scriptId && w.domain === scriptId)));
+  data.licenses = data.licenses || [];
+  data.licenses.push({ userId, userName, licenseKey, status: 'active', createdAt: new Date().toISOString() });
+  
   await saveData(data);
   revalidatePath('/');
 }
 
-export async function updateContent(scriptId, content) {
+export async function toggleLicense(licenseKey, newStatus) {
   const data = await getData();
-  const index = data.websites.findIndex(w => (w.scriptId === scriptId) || (!w.scriptId && w.domain === scriptId));
+  const index = data.licenses.findIndex(w => w.licenseKey === licenseKey);
   if (index !== -1) {
-    data.websites[index].content = content;
+    data.licenses[index].status = newStatus;
     await saveData(data);
     revalidatePath('/');
   }
+}
+
+export async function deleteLicense(licenseKey) {
+  const data = await getData();
+  data.licenses = data.licenses.filter(w => w.licenseKey !== licenseKey);
+  await saveData(data);
+  revalidatePath('/');
 }

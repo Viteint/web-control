@@ -1,119 +1,81 @@
-import { getWebsites, toggleWebsite, deleteWebsite, updateContent, logout } from './actions';
+import { getLicenses, addLicense, toggleLicense, deleteLicense } from './actions';
 
-export default async function Dashboard() {
-  const websites = await getWebsites();
+export default async function Page() {
+  const licenses = await getLicenses();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 text-black">
+    <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-900">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">WebControl Dashboard</h1>
-          <form action={logout}>
-            <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
-              Logout
-            </button>
-          </form>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Enterprise License Server</h1>
         </div>
 
-        {/* Installation Instructions */}
-        <div className="mb-8 rounded-lg bg-blue-50 p-6 shadow-sm border border-blue-200">
-          <h2 className="mb-2 text-xl font-semibold text-blue-900">Installation Snippet</h2>
-          <p className="mb-4 text-sm text-blue-800">Add a unique <code>id</code> to the script so you know which customer it belongs to. The system will automatically detect the domain it is currently hosted on.</p>
-          <code className="block w-full rounded bg-blue-100 p-3 text-sm text-blue-900 overflow-x-auto">
-            &lt;script src="https://wc.viterank.com/api/serve?id=my_customer_name" async defer&gt;&lt;/script&gt;
-          </code>
-        </div>
-
-        {/* Add Website Manually */}
+        {/* Generate License */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Script Manually</h2>
-          <form action={async (formData) => {
-            'use server';
-            const { addWebsite } = await import('./actions');
-            await addWebsite(formData);
-          }} className="flex gap-4">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Generate New License Key</h2>
+          <form action={addLicense} className="flex gap-4">
             <input 
               type="text" 
-              name="scriptId" 
-              placeholder="Script Name (e.g. radiomuziek_client)" 
+              name="userName" 
+              placeholder="Customer / Company Name" 
               className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
               required 
             />
-            <input 
-              type="text" 
-              name="domain" 
-              placeholder="Expected Domain (optional)" 
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            />
             <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              Add Script
+              Generate License
             </button>
           </form>
         </div>
-        {/* Websites List */}
+
+        {/* Licenses List */}
         <div className="rounded-lg bg-white shadow-sm border border-gray-200 overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="px-6 py-4 font-semibold">Script Name</th>
-                <th className="px-6 py-4 font-semibold">Detected Domain</th>
+                <th className="px-6 py-4 font-semibold">User ID</th>
+                <th className="px-6 py-4 font-semibold">Customer Name</th>
+                <th className="px-6 py-4 font-semibold">License Key (Secret)</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Content to Inject</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {websites.length === 0 ? (
+              {licenses.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                    No websites added yet.
+                    No licenses generated yet.
                   </td>
                 </tr>
               ) : (
-                websites.map((site) => {
-                  const identifier = site.scriptId || site.domain;
+                licenses.map((lic) => {
                   return (
-                  <tr key={identifier} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-blue-700">{site.scriptId || 'Unknown'}</td>
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{site.domain}</td>
+                  <tr key={lic.licenseKey} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 font-mono text-xs text-blue-700 font-bold">{lic.userId}</td>
+                    <td className="px-6 py-4 font-medium">{lic.userName}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500 bg-gray-100 rounded px-2 select-all cursor-pointer">
+                      {lic.licenseKey}
+                    </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${site.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {site.status.toUpperCase()}
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${lic.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {lic.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 text-xs">
-                      <form action={async (formData) => {
-                        'use server';
-                        await updateContent(identifier, formData.get('content'));
-                      }} className="flex flex-col gap-2">
-                        <textarea 
-                          name="content"
-                          defaultValue={site.content || ''}
-                          placeholder="HTML/Text to inject into the website"
-                          className="w-full h-20 rounded border border-gray-300 p-2 font-mono text-xs focus:border-blue-500 focus:outline-none"
-                        ></textarea>
-                        <button type="submit" className="self-end rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-700">Save Content</button>
-                      </form>
-                    </td>
-                    <td className="px-6 py-4 text-right align-top">
-                      <div className="flex flex-col justify-end gap-2 items-end">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
                         <form action={async () => {
                           'use server';
-                          await toggleWebsite(identifier, site.status === 'paid' ? 'unpaid' : 'paid');
+                          await toggleLicense(lic.licenseKey, lic.status === 'active' ? 'revoked' : 'active');
                         }}>
                           <button type="submit" className="w-24 rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">
-                            Mark {site.status === 'paid' ? 'Unpaid' : 'Paid'}
+                            {lic.status === 'active' ? 'Revoke' : 'Activate'}
                           </button>
                         </form>
                         
                         <form action={async () => {
                           'use server';
-                          await deleteWebsite(identifier);
+                          await deleteLicense(lic.licenseKey);
                         }}>
-                          <button 
-                            type="submit" 
-                            className="w-24 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
-                          >
+                          <button type="submit" className="w-20 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700">
                             Delete
                           </button>
                         </form>
@@ -125,7 +87,18 @@ export default async function Dashboard() {
             </tbody>
           </table>
         </div>
-
+        
+        {/* Instructions */}
+        <div className="mt-8 rounded-lg bg-yellow-50 p-6 shadow-sm border border-yellow-200">
+          <h2 className="mb-2 text-xl font-semibold text-yellow-900">How to use this system:</h2>
+          <ol className="list-decimal list-inside text-sm text-yellow-800 space-y-2">
+            <li>Generate a new license key above for a specific customer.</li>
+            <li>Copy the <strong>License Key (Secret)</strong>.</li>
+            <li>Open the customer's website files (e.g. <code>radiomuziekexspress/includes/license.php</code>)</li>
+            <li>Paste the key into the <code>$license_key</code> variable.</li>
+            <li>If you ever click <strong>Revoke</strong> on this dashboard, the customer's website will instantly throw a 403 Forbidden suspension error!</li>
+          </ol>
+        </div>
       </div>
     </div>
   );
