@@ -1,4 +1,4 @@
-import { getWebsites, addWebsite, toggleWebsite, deleteWebsite, updateContent, logout } from './actions';
+import { getWebsites, toggleWebsite, deleteWebsite, updateContent, logout } from './actions';
 
 export default async function Dashboard() {
   const websites = await getWebsites();
@@ -24,26 +24,7 @@ export default async function Dashboard() {
           </code>
         </div>
 
-        {/* Add Website Form */}
-        <div className="mb-8 rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-          <h2 className="mb-4 text-xl font-semibold">Add New Website (Optional)</h2>
-          <p className="text-sm text-gray-500 mb-4">Domains are added automatically when they load the script, but you can also pre-add them here.</p>
-          <form action={addWebsite} className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
-              <input 
-                name="domain" 
-                type="text" 
-                placeholder="e.g., viterank.com or viterank.com/path" 
-                required
-                className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <button type="submit" className="h-[42px] rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700">
-              Add Website
-            </button>
-          </form>
-        </div>
+
 
         {/* Websites List */}
         <div className="rounded-lg bg-white shadow-sm border border-gray-200 overflow-hidden">
