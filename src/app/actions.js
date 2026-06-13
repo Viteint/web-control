@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -33,15 +34,32 @@ export async function logout() {
 
 async function getData() {
   try {
-    const data = await fs.readFile(dataFile, 'utf8');
-    return JSON.parse(data);
+    const envContent = await fs.readFile(envFile, 'utf8');
+    const match = envContent.match(/^DATA_STORE=(.*)$/m);
+    if (match && match[1]) {
+      let val = match[1];
+      if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
+      return JSON.parse(val);
+    }
   } catch (error) {
-    return { websites: [] };
+    // ignore
   }
+  return { websites: [] };
 }
 
 async function saveData(data) {
-  await fs.writeFile(dataFile, JSON.stringify(data, null, 2));
+  const newDataStr = JSON.stringify(data);
+  try {
+    let envContent = await fs.readFile(envFile, 'utf8');
+    if (envContent.match(/^DATA_STORE=.*$/m)) {
+      envContent = envContent.replace(/^DATA_STORE=.*$/m, `DATA_STORE='${newDataStr}'`);
+    } else {
+      envContent += `\nDATA_STORE='${newDataStr}'\n`;
+    }
+    await fs.writeFile(envFile, envContent);
+  } catch (error) {
+    await fs.writeFile(envFile, `DATA_STORE='${newDataStr}'\n`);
+  }
 }
 
 export async function getWebsites() {
@@ -66,6 +84,7 @@ export async function toggleWebsite(domain, newStatus) {
   if (index !== -1) {
     data.websites[index].status = newStatus;
     await saveData(data);
+    revalidatePath('/');
   }
 }
 
@@ -73,6 +92,7 @@ export async function deleteWebsite(domain) {
   const data = await getData();
   data.websites = data.websites.filter(w => w.domain !== domain);
   await saveData(data);
+  revalidatePath('/');
 }
 
 export async function updateContent(domain, content) {
@@ -81,5 +101,6 @@ export async function updateContent(domain, content) {
   if (index !== -1) {
     data.websites[index].content = content;
     await saveData(data);
+    revalidatePath('/');
   }
 }
