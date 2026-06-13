@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import fs from 'fs/promises';
 import path from 'path';
 
-const dataFile = path.join(process.cwd(), 'data.json');
+const envFile = path.join(process.cwd(), '.env');
 
 export async function login(formData) {
   const username = formData.get('username');
@@ -75,6 +75,7 @@ export async function addWebsite(formData) {
   if (!data.websites.find(w => w.domain === domain)) {
     data.websites.push({ domain, status: 'paid', content: '' });
     await saveData(data);
+    revalidatePath('/');
   }
 }
 

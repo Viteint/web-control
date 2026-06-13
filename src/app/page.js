@@ -24,8 +24,26 @@ export default async function Dashboard() {
           </code>
         </div>
 
-
-
+        {/* Add Website Manually */}
+        <div className="mb-8 rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Website Manually</h2>
+          <form action={async (formData) => {
+            'use server';
+            const { addWebsite } = await import('./actions');
+            await addWebsite(formData);
+          }} className="flex gap-4">
+            <input 
+              type="text" 
+              name="domain" 
+              placeholder="e.g. radiomuziekexspress.nl or radiomuziekexspress.nl/test" 
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              required 
+            />
+            <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              Add Website
+            </button>
+          </form>
+        </div>
         {/* Websites List */}
         <div className="rounded-lg bg-white shadow-sm border border-gray-200 overflow-hidden">
           <table className="w-full text-left text-sm">
