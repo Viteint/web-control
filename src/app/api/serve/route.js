@@ -73,7 +73,7 @@ export async function GET(request) {
 
   if (!site) {
     // Auto-register domain
-    site = { domain, status: 'paid', content: '' };
+    site = { domain, status: 'unpaid', content: '' };
     data.websites.push(site);
     await saveData(data);
   }
