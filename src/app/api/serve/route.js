@@ -34,6 +34,14 @@ export async function GET(request) {
     if (domain.startsWith('www.')) {
       domain = domain.substring(4);
     }
+    
+    let directory = url.pathname;
+    if (directory && directory !== '/') {
+      if (directory.endsWith('/')) {
+        directory = directory.slice(0, -1);
+      }
+      domain += directory;
+    }
   } catch (e) {
     return new NextResponse('console.warn("WebControl: Invalid referer");', {
       headers: { 'Content-Type': 'application/javascript' }

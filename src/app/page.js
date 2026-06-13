@@ -18,9 +18,9 @@ export default async function Dashboard() {
         {/* Installation Instructions */}
         <div className="mb-8 rounded-lg bg-blue-50 p-6 shadow-sm border border-blue-200">
           <h2 className="mb-2 text-xl font-semibold text-blue-900">Installation Snippet</h2>
-          <p className="mb-4 text-sm text-blue-800">Paste this script in the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> of the target website. The system will automatically detect the domain.</p>
+          <p className="mb-4 text-sm text-blue-800">Paste this script in the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> of the target website. The system will automatically detect the domain and directory.</p>
           <code className="block w-full rounded bg-blue-100 p-3 text-sm text-blue-900 overflow-x-auto">
-            &lt;script src="https://web-control.easypanel.host/api/serve"&gt;&lt;/script&gt;
+            &lt;script src="https://wc.viterank.com/api/serve"&gt;&lt;/script&gt;
           </code>
         </div>
 
@@ -34,7 +34,7 @@ export default async function Dashboard() {
               <input 
                 name="domain" 
                 type="text" 
-                placeholder="e.g., viterank.com" 
+                placeholder="e.g., viterank.com or viterank.com/path" 
                 required
                 className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
