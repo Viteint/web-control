@@ -18,6 +18,10 @@ async function saveData(data) {
 }
 
 export async function GET(request) {
+  const host = request.headers.get('host') || 'wc.viterank.com';
+  const protocol = request.headers.get('x-forwarded-proto') || 'https';
+  const baseUrl = `${protocol}://${host}`;
+
   const { searchParams } = new URL(request.url);
   const domainParam = searchParams.get('domain');
 
@@ -33,7 +37,7 @@ export async function GET(request) {
           d += p;
         }
         var s = document.createElement('script');
-        s.src = 'https://wc.viterank.com/api/serve?domain=' + encodeURIComponent(d);
+        s.src = '${baseUrl}/api/serve?domain=' + encodeURIComponent(d);
         document.head.appendChild(s);
       })();
     `;
