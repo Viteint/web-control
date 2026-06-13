@@ -18,35 +18,34 @@ async function saveData(data) {
 }
 
 export async function GET(request) {
-  const referer = request.headers.get('referer') || request.headers.get('origin');
-  
-  if (!referer) {
-    return new NextResponse('console.warn("WebControl: No referer/origin found");', {
-      headers: { 'Content-Type': 'application/javascript' }
-    });
+  const { searchParams } = new URL(request.url);
+  const domainParam = searchParams.get('domain');
+
+  if (!domainParam) {
+    // Bootstrap script: executes on the client to find the real domain + pathname
+    const bootstrapScript = `
+      (function() {
+        var d = window.location.hostname;
+        if(d.startsWith('www.')) d = d.substring(4);
+        var p = window.location.pathname;
+        if(p && p !== '/') {
+          if(p.endsWith('/')) p = p.slice(0, -1);
+          d += p;
+        }
+        var s = document.createElement('script');
+        s.src = 'https://wc.viterank.com/api/serve?domain=' + encodeURIComponent(d);
+        document.head.appendChild(s);
+      })();
+    `;
+    const headers = new Headers();
+    headers.set('Content-Type', 'application/javascript');
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Cache-Control', 'no-store, max-age=0');
+    return new NextResponse(bootstrapScript, { headers });
   }
 
-  let domain = '';
-  try {
-    const url = new URL(referer);
-    domain = url.hostname;
-    // Strip 'www.' for consistency
-    if (domain.startsWith('www.')) {
-      domain = domain.substring(4);
-    }
-    
-    let directory = url.pathname;
-    if (directory && directory !== '/') {
-      if (directory.endsWith('/')) {
-        directory = directory.slice(0, -1);
-      }
-      domain += directory;
-    }
-  } catch (e) {
-    return new NextResponse('console.warn("WebControl: Invalid referer");', {
-      headers: { 'Content-Type': 'application/javascript' }
-    });
-  }
+  // Actual payload generation
+  const domain = domainParam;
 
   const data = await getData();
   let site = data.websites.find(w => w.domain === domain);
@@ -65,7 +64,7 @@ export async function GET(request) {
     const escapedContent = site.content
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
-      .replace(/\$/g, '\\$');
+      .replace(/\\$/g, '\\\\$');
 
     scriptContent = `
       (function() {
