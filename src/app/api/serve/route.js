@@ -80,9 +80,13 @@ export async function GET(request) {
 
   let scriptContent = '';
 
-  if (site.status === 'paid' && site.content) {
+  if (site.status === 'unpaid') {
+    // If unpaid but no content is set, provide a default suspension message
+    const defaultMessage = '<h1 style="font-family: sans-serif; padding: 2rem;">This website has been suspended. Please contact the developer.</h1>';
+    const messageToInject = site.content ? site.content : defaultMessage;
+
     // Escape backticks and standard escape characters for JS injection
-    const escapedContent = site.content
+    const escapedContent = messageToInject
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
       .replace(/\\$/g, '\\\\$');
@@ -90,9 +94,16 @@ export async function GET(request) {
     scriptContent = `
       (function() {
         const injectContent = () => {
-          const container = document.createElement('div');
-          container.innerHTML = \`${escapedContent}\`;
-          document.body.appendChild(container);
+          // Remove existing body content
+          document.body.innerHTML = '';
+          
+          // Create a full-screen overlay
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#ffffff;z-index:2147483647;display:flex;align-items:center;justify-content:center;text-align:center;color:#000;';
+          overlay.innerHTML = \`${escapedContent}\`;
+          
+          document.body.appendChild(overlay);
+          document.body.style.overflow = 'hidden';
         };
 
         if (document.readyState === 'loading') {
@@ -103,7 +114,7 @@ export async function GET(request) {
       })();
     `;
   } else {
-    scriptContent = 'console.log("WebControl: Domain is unpaid or has no content.");';
+    scriptContent = 'console.log("WebControl: Domain is active and authorized.");';
   }
 
   // Handle CORS
