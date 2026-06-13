@@ -18,15 +18,15 @@ export default async function Dashboard() {
         {/* Installation Instructions */}
         <div className="mb-8 rounded-lg bg-blue-50 p-6 shadow-sm border border-blue-200">
           <h2 className="mb-2 text-xl font-semibold text-blue-900">Installation Snippet</h2>
-          <p className="mb-4 text-sm text-blue-800">Paste this script in the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> of the target website. The system will automatically detect the domain and directory.</p>
+          <p className="mb-4 text-sm text-blue-800">Add a unique <code>id</code> to the script so you know which customer it belongs to. The system will automatically detect the domain it is currently hosted on.</p>
           <code className="block w-full rounded bg-blue-100 p-3 text-sm text-blue-900 overflow-x-auto">
-            &lt;script src="https://wc.viterank.com/api/serve"&gt;&lt;/script&gt;
+            &lt;script src="https://wc.viterank.com/api/serve?id=my_customer_name" async defer&gt;&lt;/script&gt;
           </code>
         </div>
 
         {/* Add Website Manually */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Website Manually</h2>
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Script Manually</h2>
           <form action={async (formData) => {
             'use server';
             const { addWebsite } = await import('./actions');
@@ -34,13 +34,19 @@ export default async function Dashboard() {
           }} className="flex gap-4">
             <input 
               type="text" 
-              name="domain" 
-              placeholder="e.g. radiomuziekexspress.nl or radiomuziekexspress.nl/test" 
+              name="scriptId" 
+              placeholder="Script Name (e.g. radiomuziek_client)" 
               className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
               required 
             />
+            <input 
+              type="text" 
+              name="domain" 
+              placeholder="Expected Domain (optional)" 
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
             <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              Add Website
+              Add Script
             </button>
           </form>
         </div>
@@ -49,7 +55,8 @@ export default async function Dashboard() {
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="px-6 py-4 font-semibold">Domain</th>
+                <th className="px-6 py-4 font-semibold">Script Name</th>
+                <th className="px-6 py-4 font-semibold">Detected Domain</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold">Content to Inject</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
@@ -58,14 +65,17 @@ export default async function Dashboard() {
             <tbody className="divide-y divide-gray-200">
               {websites.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                     No websites added yet.
                   </td>
                 </tr>
               ) : (
-                websites.map((site) => (
-                  <tr key={site.domain} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium">{site.domain}</td>
+                websites.map((site) => {
+                  const identifier = site.scriptId || site.domain;
+                  return (
+                  <tr key={identifier} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium text-blue-700">{site.scriptId || 'Unknown'}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{site.domain}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${site.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {site.status.toUpperCase()}
@@ -74,7 +84,7 @@ export default async function Dashboard() {
                     <td className="px-6 py-4 text-gray-500 text-xs">
                       <form action={async (formData) => {
                         'use server';
-                        await updateContent(site.domain, formData.get('content'));
+                        await updateContent(identifier, formData.get('content'));
                       }} className="flex flex-col gap-2">
                         <textarea 
                           name="content"
@@ -89,7 +99,7 @@ export default async function Dashboard() {
                       <div className="flex flex-col justify-end gap-2 items-end">
                         <form action={async () => {
                           'use server';
-                          await toggleWebsite(site.domain, site.status === 'paid' ? 'unpaid' : 'paid');
+                          await toggleWebsite(identifier, site.status === 'paid' ? 'unpaid' : 'paid');
                         }}>
                           <button type="submit" className="w-24 rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">
                             Mark {site.status === 'paid' ? 'Unpaid' : 'Paid'}
@@ -98,19 +108,19 @@ export default async function Dashboard() {
                         
                         <form action={async () => {
                           'use server';
-                          await deleteWebsite(site.domain);
+                          await deleteWebsite(identifier);
                         }}>
                           <button 
                             type="submit" 
                             className="w-24 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
                           >
-                            Delete Website
+                            Delete
                           </button>
                         </form>
                       </div>
                     </td>
                   </tr>
-                ))
+                )})
               )}
             </tbody>
           </table>

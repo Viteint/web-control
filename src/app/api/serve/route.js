@@ -41,6 +41,7 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const domainParam = searchParams.get('domain');
+  const idParam = searchParams.get('id') || 'unknown_script';
 
   if (!domainParam) {
     // Bootstrap script: executes on the client to find the real domain + pathname
@@ -54,7 +55,7 @@ export async function GET(request) {
           d += p;
         }
         var s = document.createElement('script');
-        s.src = '${baseUrl}/api/serve?domain=' + encodeURIComponent(d);
+        s.src = '${baseUrl}/api/serve?id=${encodeURIComponent(idParam)}&domain=' + encodeURIComponent(d);
         document.head.appendChild(s);
       })();
     `;
@@ -67,15 +68,31 @@ export async function GET(request) {
 
   // Actual payload generation
   const domain = domainParam;
+  const scriptId = idParam;
 
   const data = await getData();
-  let site = data.websites.find(w => w.domain === domain);
+  // Find by scriptId, or fallback to domain
+  let site = data.websites.find(w => (w.scriptId && w.scriptId === scriptId) || (!w.scriptId && w.domain === domain));
 
   if (!site) {
-    // Auto-register domain
-    site = { domain, status: 'unpaid', content: '' };
+    // Auto-register new script
+    site = { scriptId, domain, status: 'unpaid', content: '' };
     data.websites.push(site);
     await saveData(data);
+  } else {
+    // Update domain if it has moved, and ensure scriptId is set
+    let changed = false;
+    if (site.domain !== domain) {
+      site.domain = domain;
+      changed = true;
+    }
+    if (!site.scriptId) {
+      site.scriptId = scriptId;
+      changed = true;
+    }
+    if (changed) {
+      await saveData(data);
+    }
   }
 
   let scriptContent = '';

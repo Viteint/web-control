@@ -68,20 +68,21 @@ export async function getWebsites() {
 }
 
 export async function addWebsite(formData) {
-  const domain = formData.get('domain');
-  if (!domain) return;
+  const scriptId = formData.get('scriptId');
+  const domain = formData.get('domain') || 'pending...';
+  if (!scriptId) return;
   
   const data = await getData();
-  if (!data.websites.find(w => w.domain === domain)) {
-    data.websites.push({ domain, status: 'paid', content: '' });
+  if (!data.websites.find(w => w.scriptId === scriptId)) {
+    data.websites.push({ scriptId, domain, status: 'paid', content: '' });
     await saveData(data);
     revalidatePath('/');
   }
 }
 
-export async function toggleWebsite(domain, newStatus) {
+export async function toggleWebsite(scriptId, newStatus) {
   const data = await getData();
-  const index = data.websites.findIndex(w => w.domain === domain);
+  const index = data.websites.findIndex(w => (w.scriptId === scriptId) || (!w.scriptId && w.domain === scriptId));
   if (index !== -1) {
     data.websites[index].status = newStatus;
     await saveData(data);
@@ -89,16 +90,16 @@ export async function toggleWebsite(domain, newStatus) {
   }
 }
 
-export async function deleteWebsite(domain) {
+export async function deleteWebsite(scriptId) {
   const data = await getData();
-  data.websites = data.websites.filter(w => w.domain !== domain);
+  data.websites = data.websites.filter(w => !((w.scriptId === scriptId) || (!w.scriptId && w.domain === scriptId)));
   await saveData(data);
   revalidatePath('/');
 }
 
-export async function updateContent(domain, content) {
+export async function updateContent(scriptId, content) {
   const data = await getData();
-  const index = data.websites.findIndex(w => w.domain === domain);
+  const index = data.websites.findIndex(w => (w.scriptId === scriptId) || (!w.scriptId && w.domain === scriptId));
   if (index !== -1) {
     data.websites[index].content = content;
     await saveData(data);
